@@ -58,7 +58,7 @@ export default async function App() {
   const pushupCount = daysDifference + 1;
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-8 justify-center">
+    <main className="flex min-h-screen flex-col items-center p-3 justify-center">
       <Card className="w-full max-w-md p-6 space-y-6">
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold">{formattedDate}</h2>
