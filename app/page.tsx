@@ -9,13 +9,14 @@ async function markComplete(userId: string) {
   
   const supabase = await createClient();
   const today = new Date();
-  today.setDate(today.getDate() + 1);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
 
   const { error } = await supabase
     .from('challenge_completions')
     .upsert({
       user_id: userId,
-      challenge_date: today.toISOString().split('T')[0]
+      challenge_date: tomorrow.toISOString().split('T')[0]
     }, {
       onConflict: 'user_id,challenge_date'
     });
@@ -42,23 +43,15 @@ export default async function App() {
     day: 'numeric'
   });
 
-  const todayISO = today.toISOString().split('T')[0];
   const tomorrowISO = tomorrow.toISOString().split('T')[0];
 
   const { data: completions } = await supabase
     .from('challenge_completions')
     .select('user_id, challenge_date')
-    .in('challenge_date', [todayISO, tomorrowISO]);
+    .eq('challenge_date', tomorrowISO);
 
-  const gabrielCompleted = completions?.some(c => 
-    c.user_id === 'gabriel' && 
-    (c.challenge_date === todayISO || c.challenge_date === tomorrowISO)
-  ) ?? false;
-  
-  const mateusCompleted = completions?.some(c => 
-    c.user_id === 'mateus' && 
-    (c.challenge_date === todayISO || c.challenge_date === tomorrowISO)
-  ) ?? false;
+  const gabrielCompleted = completions?.some(c => c.user_id === 'gabriel') ?? false;
+  const mateusCompleted = completions?.some(c => c.user_id === 'mateus') ?? false;
 
   const startDate = new Date('2024-12-19');
   const daysDifference = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
