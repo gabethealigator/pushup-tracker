@@ -8,14 +8,14 @@ async function markComplete(userId: string) {
   'use server'
   
   const supabase = await createClient();
-  const today = new Date()
-
+  const today = new Date();
+  today.setDate(today.getDate() + 1);
 
   const { error } = await supabase
     .from('challenge_completions')
     .upsert({
       user_id: userId,
-      challenge_date: today
+      challenge_date: today.toISOString().split('T')[0]
     }, {
       onConflict: 'user_id,challenge_date'
     });
@@ -31,8 +31,10 @@ async function markComplete(userId: string) {
 export default async function App() {
   const supabase = await createClient();
   
-  // Get today's date
   const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
   const formattedDate = today.toLocaleDateString('pt-BR', {
     weekday: 'long',
     year: 'numeric',
@@ -40,20 +42,24 @@ export default async function App() {
     day: 'numeric'
   });
 
-  // Get today's ISO date for database query
   const todayISO = today.toISOString().split('T')[0];
+  const tomorrowISO = tomorrow.toISOString().split('T')[0];
 
-  // Fetch completion status for both users
   const { data: completions } = await supabase
     .from('challenge_completions')
-    .select('user_id')
-    .eq('challenge_date', todayISO);
+    .select('user_id, challenge_date')
+    .in('challenge_date', [todayISO, tomorrowISO]);
 
-  // Check if each user has completed today's challenge
-  const gabrielCompleted = completions?.some(c => c.user_id === 'gabriel') ?? false;
-  const mateusCompleted = completions?.some(c => c.user_id === 'mateus') ?? false;
+  const gabrielCompleted = completions?.some(c => 
+    c.user_id === 'gabriel' && 
+    (c.challenge_date === todayISO || c.challenge_date === tomorrowISO)
+  ) ?? false;
+  
+  const mateusCompleted = completions?.some(c => 
+    c.user_id === 'mateus' && 
+    (c.challenge_date === todayISO || c.challenge_date === tomorrowISO)
+  ) ?? false;
 
-  // Calculate pushup count (days since start)
   const startDate = new Date('2024-12-19');
   const daysDifference = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   const pushupCount = daysDifference + 1;
