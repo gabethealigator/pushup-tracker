@@ -8,7 +8,7 @@ async function markComplete(userId: string) {
   'use server'
   
   const supabase = await createClient();
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date()
 
 
   const { error } = await supabase
@@ -55,7 +55,7 @@ export default async function App() {
 
   // Calculate pushup count (days since start)
   const startDate = new Date('2024-12-19');
-  const daysDifference = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+  const daysDifference = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   const pushupCount = daysDifference + 1;
 
   return (

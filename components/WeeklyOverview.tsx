@@ -10,8 +10,11 @@ export default function VisaoSemanal() {
   const [semanaAtual, setSemanaAtual] = useState(new Date());
   const [conclusoes, setConclusoes] = useState<any[]>([]);
   
-  const navegarSemana = (direcao: 'anterior' | 'proxima') => {
+  const navegarSemana = (direcao: 'anterior' | 'proxima' | 'atual') => {
     setSemanaAtual(dataAtual => {
+      if (direcao === 'atual') {
+        return new Date();
+      }
       const novaData = new Date(dataAtual);
       novaData.setDate(dataAtual.getDate() + (direcao === 'anterior' ? -7 : 7));
       return novaData;
@@ -65,7 +68,9 @@ export default function VisaoSemanal() {
         >
           <ChevronLeft className="w-6 h-6" />
         </Button>
-        <h3 className="text-xl font-bold">Visão Semanal</h3>
+        <div className="flex flex-col items-center">
+          <h3 className="text-xl font-bold">Visão Semanal</h3>
+        </div>
         <Button 
           variant="ghost" 
           onClick={() => navegarSemana('proxima')}
@@ -113,6 +118,16 @@ export default function VisaoSemanal() {
           );
         })}
       </div>
+
+        <div className="flex items-center justify-center mt-5">
+            <Button 
+            variant="link" 
+            onClick={() => navegarSemana('atual')}
+            className="text-sm"
+            >
+            Voltar para semana atual
+            </Button>
+        </div>
     </Card>
   );
 } 
