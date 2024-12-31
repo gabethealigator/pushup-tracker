@@ -9,6 +9,7 @@ import { Button } from "./ui/button";
 export default function VisaoSemanal() {
   const [semanaAtual, setSemanaAtual] = useState(new Date());
   const [conclusoes, setConclusoes] = useState<any[]>([]);
+  const [atualizacao, setAtualizacao] = useState(0);
   
   const navegarSemana = (direcao: 'anterior' | 'proxima' | 'atual') => {
     setSemanaAtual(dataAtual => {
@@ -45,7 +46,19 @@ export default function VisaoSemanal() {
     };
 
     buscarConclusoes();
-  }, [semanaAtual]);
+  }, [semanaAtual, atualizacao]);
+
+  useEffect(() => {
+    const handleCompletionUpdate = () => {
+      setAtualizacao(prev => prev + 1);
+    };
+
+    window.addEventListener('completion-updated', handleCompletionUpdate);
+    
+    return () => {
+      window.removeEventListener('completion-updated', handleCompletionUpdate);
+    };
+  }, []);
 
   const inicioDaSemana = new Date(semanaAtual);
   const diaDaSemana = semanaAtual.getDay();

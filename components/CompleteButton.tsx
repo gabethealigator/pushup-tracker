@@ -18,6 +18,8 @@ export function CompleteButton({ userId, isCompleted, onComplete }: CompleteButt
       onClick={async () => {
         if (!isCompleted) {
           await onComplete(userId);
+          const event = new CustomEvent('completion-updated');
+          window.dispatchEvent(event);
         }
       }}
       disabled={isCompleted}
