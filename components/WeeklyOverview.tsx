@@ -1,50 +1,100 @@
-import { createClient } from "@/utils/supabase/server";
+'use client'
+
+import { createClient } from "@/utils/supabase/client";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "./ui/button";
 
-export default async function WeeklyOverview() {
-  const supabase = await createClient();
+export default function VisaoSemanal() {
+  const [semanaAtual, setSemanaAtual] = useState(new Date());
+  const [conclusoes, setConclusoes] = useState<any[]>([]);
   
-  const today = new Date();
-  const startOfWeek = new Date(today);
-  const dayOfWeek = today.getDay();
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; 
-  startOfWeek.setDate(today.getDate() + diff);
+  const navegarSemana = (direcao: 'anterior' | 'proxima') => {
+    setSemanaAtual(dataAtual => {
+      const novaData = new Date(dataAtual);
+      novaData.setDate(dataAtual.getDate() + (direcao === 'anterior' ? -7 : 7));
+      return novaData;
+    });
+  };
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(startOfWeek);
-    date.setDate(startOfWeek.getDate() + i);
-    return date.toISOString().split('T')[0];
+  useEffect(() => {
+    const buscarConclusoes = async () => {
+      const supabase = createClient();
+      
+      const inicioDaSemana = new Date(semanaAtual);
+      const diaDaSemana = semanaAtual.getDay();
+      const diferenca = diaDaSemana === 0 ? -6 : 1 - diaDaSemana;
+      inicioDaSemana.setDate(semanaAtual.getDate() + diferenca);
+
+      const diasDaSemana = Array.from({ length: 7 }, (_, i) => {
+        const data = new Date(inicioDaSemana);
+        data.setDate(inicioDaSemana.getDate() + i);
+        return data.toISOString().split('T')[0];
+      });
+
+      const { data } = await supabase
+        .from('challenge_completions')
+        .select('user_id, challenge_date')
+        .in('challenge_date', diasDaSemana);
+
+      setConclusoes(data || []);
+    };
+
+    buscarConclusoes();
+  }, [semanaAtual]);
+
+  const inicioDaSemana = new Date(semanaAtual);
+  const diaDaSemana = semanaAtual.getDay();
+  const diferenca = diaDaSemana === 0 ? -6 : 1 - diaDaSemana;
+  inicioDaSemana.setDate(semanaAtual.getDate() + diferenca);
+
+  const diasDaSemana = Array.from({ length: 7 }, (_, i) => {
+    const data = new Date(inicioDaSemana);
+    data.setDate(inicioDaSemana.getDate() + i);
+    return data.toISOString().split('T')[0];
   });
-
-  const { data: completions } = await supabase
-    .from('challenge_completions')
-    .select('user_id, challenge_date')
-    .in('challenge_date', weekDays);
 
   return (
     <Card className="w-full max-w-md mt-8 p-6">
-      <h3 className="text-xl font-bold mb-4">Visão Semanal</h3>
+      <div className="flex justify-between items-center mb-4">
+        <Button 
+          variant="ghost" 
+          onClick={() => navegarSemana('anterior')}
+          className="p-2"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </Button>
+        <h3 className="text-xl font-bold">Visão Semanal</h3>
+        <Button 
+          variant="ghost" 
+          onClick={() => navegarSemana('proxima')}
+          className="p-2"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </Button>
+      </div>
+
       <div className="space-y-4">
-        {weekDays.map((date) => {
-          const dayCompletions = completions?.filter(c => c.challenge_date === date) || [];
-          const gabrielDone = dayCompletions.some(c => c.user_id === 'gabriel');
-          const mateusDone = dayCompletions.some(c => c.user_id === 'mateus');
+        {diasDaSemana.map((data) => {
+          const conclusoesDoDia = conclusoes?.filter(c => c.challenge_date === data) || [];
+          const gabrielConcluiu = conclusoesDoDia.some(c => c.user_id === 'gabriel');
+          const mateusConcluiu = conclusoesDoDia.some(c => c.user_id === 'mateus');
 
           return (
-            <div key={date} className="flex justify-between items-center">
+            <div key={data} className="flex justify-between items-center">
               <div>
                 <p className="font-medium">
-                  {new Date(date).toLocaleDateString('pt-BR', { weekday: 'long' })}
+                  {new Date(data).toLocaleDateString('pt-BR', { weekday: 'long' })}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {new Date(date).toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' })}
+                  {new Date(data).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}
                 </p>
               </div>
               <div className="flex gap-4">
                 <div className="flex items-center gap-1">
                   <span className="text-sm">Gabriel</span>
-                  {gabrielDone ? (
+                  {gabrielConcluiu ? (
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
                   ) : (
                     <XCircle className="w-5 h-5 text-red-500" />
@@ -52,7 +102,7 @@ export default async function WeeklyOverview() {
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-sm">Mateus</span>
-                  {mateusDone ? (
+                  {mateusConcluiu ? (
                     <CheckCircle2 className="w-5 h-5 text-green-500" />
                   ) : (
                     <XCircle className="w-5 h-5 text-red-500" />
